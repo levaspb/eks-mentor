@@ -25,11 +25,22 @@ module "vpc" {
   public_subnets  = var.public_subnets
 
   enable_nat_gateway = true
-  enable_vpn_gateway = true
+  single_nat_gateway = true
+  enable_dns_hostnames = true
+  # enable_vpn_gateway = true
 
   tags = {
     Terraform = "true"
     Environment = var.env_prefix
+    "kubernetes.io/cluster/mentor-cluster" = "shared"
+  }
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/mentor-cluster" = "shared"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/mentor-cluster" = "shared"
   }
 }
 
