@@ -12,6 +12,24 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_eks_cluster" "mentor-cluster" {
+  name = module.eks.cluster_name
+}
+
+data "aws_eks_cluster_auth" "mentor-cluster" {
+  name = module.eks.cluster_name
+}
+
+provider "kubernetes" {
+  host = data.aws_eks_cluster.mentor-cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.mentor-cluster.certificate_authority.0.data)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    command     = "aws"
+  }
+}
+
 data "aws_availability_zones" "available" {}
 
 module "vpc" {
@@ -111,7 +129,7 @@ module "eks" {
 
   # EKS Managed Node Group(s)
   eks_managed_node_group_defaults = {
-    instance_types = ["t2.micro", "t2.small", "t2.nano"]
+    instance_types = ["t2.micro", "t2.small"]
   }
 
   eks_managed_node_groups = {
@@ -137,35 +155,6 @@ module "eks" {
       ]
     }
   }
-
-  # aws-auth configmap
-  manage_aws_auth_configmap = false
-
-  aws_auth_roles = [
-    {
-      rolearn  = "arn:aws:iam::66666666666:role/role1"
-      username = "role1"
-      groups   = ["system:masters"]
-    },
-  ]
-
-  aws_auth_users = [
-    {
-      userarn  = "arn:aws:iam::66666666666:user/user1"
-      username = "user1"
-      groups   = ["system:masters"]
-    },
-    {
-      userarn  = "arn:aws:iam::66666666666:user/user2"
-      username = "user2"
-      groups   = ["system:masters"]
-    },
-  ]
-
-  aws_auth_accounts = [
-    "777777777777",
-    "888888888888",
-  ]
 
   tags = {
     Environment = var.env_prefix
